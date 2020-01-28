@@ -160,30 +160,3 @@ broom::augment(mod_fixed, newdata = predicted_scores) %>%
             score_upper = sum(score_upper)/365) 
 
 
-#--------------------------------------------------------------------------
-# Prepare data for paired analysis ----------------------------------------
-#--------------------------------------------------------------------------
-
-#Determine which participants completed a form in each illness phase
-all <- qwb_deng %>% 
-  group_by(case_name, phase) %>% 
-  count() %>% 
-  filter(n == 1) %>% 
-  group_by(case_name) %>% 
-  summarise(all = sum(n, na.rm = TRUE)) %>% 
-  filter(all == 3) %>% pull(case_name)
-
-#Filter original data frame to include only those that have form in each illness phase
-qwb_pair <- qwb_deng %>% 
-  filter(case_name %in% all)
-
-qwb_pair %>% 
-  group_by(case_name, capture) %>% 
-  # mutate(n1 = n()) %>% 
-  # filter(n1 != 1) %>% 
-  summarise(n = n(), max_score = max(score), min_score = min(score)) %>% 
-  filter(max_score > 0.9) %>% 
-  mutate(pc_change = (max_score-min_score)/max_score) %>%
-  ggplot(aes(x =  capture, y = pc_change)) +
-  geom_jitter(width = 0.2)
-
