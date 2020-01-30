@@ -157,6 +157,6 @@ broom::augment(mod_fixed, newdata = predicted_scores) %>%
   summarise(n(), 
             daly = sum(score)/365,
             daly_lower = sum(score_lower)/365,
-            score_upper = sum(score_upper)/365) 
+            daly_upper = sum(score_upper)/365) 
 
 
