@@ -63,11 +63,7 @@ tmp1_df %>%
   select(inde_var, OR_fixed, CIf, OR_mixed, CIm, everything()) 
 
 
-#Model used for figures (The model used in Fig 3. uses the age groups rather than continuous age values used in mod_final)
-mod_final_plot <- lm(score1 ~ day_illness+capture+age+sex, data = qwb_regression)
-summary(mod_final_plot)
 #Create dummy data set of predicted scores 
- 
 median_age_male <- median(qwb_regression$age[qwb_regression$sex == "male"])
 quant_25 <- quantile(qwb_regression$age[qwb_regression$sex == "male"], probs = 0.25)
 quant_75 <- quantile(qwb_regression$age[qwb_regression$sex == "male"], probs = 0.75)
