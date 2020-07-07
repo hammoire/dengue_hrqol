@@ -14,8 +14,8 @@ library(lemon)
 # Read in data ------------------------------------------------------------
 #--------------------------------------------------------------------------
 
-qwb_deng <- read_csv("Dropbox/R_projects/professional_r/p01_r/project2_r/qwb/input/qwb_deng.csv")
-write_rds(qwb_deng, "Desktop/qwb_deng.rds")
+#Ensure rds file path set correctly
+qwb_deng <- read_rds("qwb_deng.rds")
 
 #Determine which participants completed a form in each illness phase
 all <- qwb_deng %>% 
