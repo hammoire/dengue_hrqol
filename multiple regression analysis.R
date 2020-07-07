@@ -51,19 +51,23 @@ tmp2_df <- round(cbind(exp(confint(mod_mixed)), c(NA, NA, exp(lme4::fixef(mod_mi
 
 tmp1_df %>% 
   bind_cols(tmp2_df) %>% 
-  select(inde_var = rowname,
+  select(inde_var = rowname...1,
          OR_fixed = V1,
-         ci0.25 = `2.5 %`,
-         ci0.975 = `97.5 %`,
+         ci0.25 = `2.5 %...3`,
+         ci0.975 = `97.5 %...4`,
          OR_mixed = V3,
-         ci0.25m = `2.5 %1`,
-         ci0.975m = `97.5 %1`) %>% 
+         ci0.25m = `2.5 %...6`,
+         ci0.975m = `97.5 %...7`) %>% 
   mutate(CIf = str_c("OR:", ci0.25, "-", ci0.975),
          CIm = str_c("OR:", ci0.25m, "-", ci0.975m)) %>% 
   select(inde_var, OR_fixed, CIf, OR_mixed, CIm, everything()) 
 
 
+#Model used for figures (The model used in Fig 3. uses the age groups rather than continuous age values used in mod_final)
+mod_final_plot <- lm(score1 ~ day_illness+capture+age+sex, data = qwb_regression)
+summary(mod_final_plot)
 #Create dummy data set of predicted scores 
+ 
 median_age_male <- median(qwb_regression$age[qwb_regression$sex == "male"])
 quant_25 <- quantile(qwb_regression$age[qwb_regression$sex == "male"], probs = 0.25)
 quant_75 <- quantile(qwb_regression$age[qwb_regression$sex == "male"], probs = 0.75)
@@ -96,16 +100,18 @@ fig_3 <- qwb_regression %>%
   mutate(day_illness = ifelse(day_illness > 70, 50, day_illness)) %>% 
   ggplot(aes(x = as.numeric(day_illness), y = as.numeric(score), color = factor(capture))) +
 
+
   # scale_x_continuous() +
   # scale_y_continuous() +
   # geom_polygon(data = predicted_scores, aes(x = as.numeric(day_illness),
   #                                           y = plogis(predict(mod_fixed, newdata = predicted_scores))))
   geom_ribbon(data = predicted_scores %>% filter(day_illness <= 19), aes(x = as.numeric(day_illness),
-                                           ymin = plogis(predict(mod_fixed, newdata = predicted_scores%>% filter(day_illness <= 19))),
-                                           ymax = as.numeric(1)), alpha = 0, color = "black", linetype = "dotted") +
+                                           ymin = plogis(predict(mod_fixed, newdata = predicted_scores %>% filter(day_illness <= 19))),
+                                           ymax = as.numeric(1)), alpha = 0, color = "black", linetype = "dotted", inherit.aes = FALSE) +
   geom_ribbon(data = predicted_scores, aes(x = as.numeric(day_illness),
                                                                          ymin = plogis(predict(mod_fixed, newdata = predicted_scores)),
-                                                                         ymax = as.numeric(1)), fill = "grey", alpha = 0.5, linetype = "blank") +
+                                                                         ymax = as.numeric(1)), fill = "grey", alpha = 0.5, linetype = "blank",
+               inherit.aes = FALSE) +
   geom_line(data = predicted_scores, aes(x = as.numeric(day_illness),
                                          y = plogis(predict(mod_fixed, newdata = predicted_scores)),
                                          color = factor(capture)), size = 0.35) +
@@ -132,9 +138,7 @@ fig_3 <- qwb_regression %>%
         legend.position="top",
         strip.background = element_rect(fill = "#f0f0f0")) 
 
-tiff("~/Desktop/Fig3.tiff", units="in", width=7, height=3.8, res=300)
 fig_3
-dev.off()
 
 #--------------------------------------------------------------------------
 # Fig 5. Disease burden calculation ---------------------------------------
@@ -153,6 +157,36 @@ broom::augment(mod_fixed, newdata = predicted_scores) %>%
   summarise(n(), 
             daly = sum(score)/365,
             daly_lower = sum(score_lower)/365,
-            daly_upper = sum(score_upper)/365) 
+            score_upper = sum(score_upper)/365) 
+
+
+#--------------------------------------------------------------------------
+# Prepare data for paired analysis ----------------------------------------
+#--------------------------------------------------------------------------
+
+#Determine which participants completed a form in each illness phase
+all <- qwb_deng %>% 
+  group_by(case_name, phase) %>% 
+  count() %>% 
+  filter(n == 1) %>% 
+  group_by(case_name) %>% 
+  summarise(all = sum(n, na.rm = TRUE)) %>% 
+  filter(all == 3) %>% pull(case_name)
+
+#Filter original data frame to include only those that have form in each illness phase
+qwb_pair <- qwb_deng %>% 
+  filter(case_name %in% all)
+
+qwb_pair %>% 
+  group_by(case_name, capture) %>% 
+  # mutate(n1 = n()) %>% 
+  # filter(n1 != 1) %>% 
+  summarise(n = n(), max_score = max(score), min_score = min(score)) %>% 
+  filter(max_score > 0.9) %>% 
+  mutate(pc_change = (max_score-min_score)/max_score) %>%
+  ggplot(aes(x =  capture, y = pc_change)) +
+  geom_jitter(width = 0.2)
+
+
 
 
